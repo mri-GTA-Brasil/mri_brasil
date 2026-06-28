@@ -1,3 +1,4 @@
+# Build do site (web/) com static export e publicação no GitHub Pages.
 name: Deploy site (GitHub Pages)
 
 on:
