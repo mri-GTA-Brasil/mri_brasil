@@ -31,15 +31,17 @@ Este é um **resource de substituição de assets**: ele não roda scripts no se
 
 ```
 mri_brasil/
-├── fxmanifest.lua        # Manifesto do resource (FiveM/RedM)
-└── sfx/                  # Pacotes de áudio (.awc) — adicionados por partes
-    ├── ONESHOT_AMBIENCE/   # Sons ambientes pontuais (PA aeroporto, veículos distantes…)
-    ├── POLICE_SCANNER/     # Scanner / rádio da polícia
-    ├── STREAMED_AMBIENCE/  # Sons de ambiente em streaming
-    ├── S_FULL_AMB_F/       # Falas de NPCs ambientes femininos
-    ├── S_FULL_AMB_M/       # Falas de NPCs ambientes masculinos
-    ├── S_FULL_GAN/         # Falas de gangues (Ballas, Families, Lost MC…)
-    └── S_FULL_SER/         # Falas de NPCs de serviço (cops, pilotos, SWAT…)
+├── resource/             # O resource FiveM/RedM em si
+│   ├── fxmanifest.lua      # Manifesto do resource
+│   └── sfx/                # Pacotes de áudio (.awc) — adicionados por partes
+│       ├── ONESHOT_AMBIENCE/   # Sons ambientes pontuais (PA aeroporto, veículos distantes…)
+│       ├── POLICE_SCANNER/     # Scanner / rádio da polícia
+│       ├── STREAMED_AMBIENCE/  # Sons de ambiente em streaming
+│       ├── S_FULL_AMB_F/       # Falas de NPCs ambientes femininos
+│       ├── S_FULL_AMB_M/       # Falas de NPCs ambientes masculinos
+│       ├── S_FULL_GAN/         # Falas de gangues (Ballas, Families, Lost MC…)
+│       └── S_FULL_SER/         # Falas de NPCs de serviço (cops, pilotos, SWAT…)
+└── web/                  # Site de progresso da dublagem (Next.js)
 ```
 
 > ℹ️ Os arquivos de áudio (`.awc`) ainda **não estão neste repositório** — serão publicados em etapas. A estrutura acima documenta o destino de cada pacote.
@@ -50,7 +52,7 @@ mri_brasil/
 
 Resumo do funcionamento previsto:
 
-1. Coloque a pasta `mri_brasil` dentro de `resources/` do seu servidor.
+1. Copie a pasta [`resource/`](resource/) para dentro de `resources/` do seu servidor, renomeando-a para `mri_brasil`.
 2. Adicione `ensure mri_brasil` ao seu `server.cfg`.
 3. Reinicie o servidor — os áudios dublados substituem os originais automaticamente.
 
