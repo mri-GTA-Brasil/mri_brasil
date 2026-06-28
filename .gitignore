@@ -1,5 +1,6 @@
-# Áudios serão adicionados por partes — ignorados por enquanto
-resource/sfx/
+# Áudios serão adicionados por partes — .awc ignorados por enquanto
+# (a estrutura de pastas é preservada pelos arquivos .gitkeep)
+*.awc
 
 # Sistema operacional
 Thumbs.db

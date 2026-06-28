@@ -31,30 +31,53 @@ Este é um **resource de substituição de assets**: ele não roda scripts no se
 
 ```
 mri_brasil/
-├── resource/             # O resource FiveM/RedM em si
-│   ├── fxmanifest.lua      # Manifesto do resource
-│   └── sfx/                # Pacotes de áudio (.awc) — adicionados por partes
-│       ├── ONESHOT_AMBIENCE/   # Sons ambientes pontuais (PA aeroporto, veículos distantes…)
-│       ├── POLICE_SCANNER/     # Scanner / rádio da polícia
-│       ├── STREAMED_AMBIENCE/  # Sons de ambiente em streaming
-│       ├── S_FULL_AMB_F/       # Falas de NPCs ambientes femininos
-│       ├── S_FULL_AMB_M/       # Falas de NPCs ambientes masculinos
-│       ├── S_FULL_GAN/         # Falas de gangues (Ballas, Families, Lost MC…)
-│       └── S_FULL_SER/         # Falas de NPCs de serviço (cops, pilotos, SWAT…)
-└── web/                  # Site de progresso da dublagem (Next.js)
+├── resource/                       # Os resources FiveM/RedM
+│   └── [mri_brasil]/                 # Pasta agrupadora (instale só os pacotes que quiser)
+│       ├── mri_brasil_s_full_amb_m/     # NPCs ambientes masculinos        (107)
+│       ├── mri_brasil_s_full_amb_f/     # NPCs ambientes femininos         (61)
+│       ├── mri_brasil_s_full_ser/       # NPCs de serviço (cops, SWAT…)    (63)
+│       ├── mri_brasil_s_full_gan/       # Gangues (Ballas, Families…)      (19)
+│       ├── mri_brasil_oneshot_ambience/ # Ambiente pontual                 (93)
+│       ├── mri_brasil_streamed_ambience_p1/  # Ambiente streaming (1/2)    (85)
+│       ├── mri_brasil_streamed_ambience_p2/  # Ambiente streaming (2/2)    (85)
+│       ├── mri_brasil_police_scanner_p1/     # Scanner da polícia (1/3)    (111)
+│       ├── mri_brasil_police_scanner_p2/     # Scanner da polícia (2/3)    (111)
+│       └── mri_brasil_police_scanner_p3/     # Scanner da polícia (3/3)    (110)
+└── web/                            # Site de progresso da dublagem (Next.js)
 ```
 
-> ℹ️ Os arquivos de áudio (`.awc`) ainda **não estão neste repositório** — serão publicados em etapas. A estrutura acima documenta o destino de cada pacote.
+Cada sub-resource tem seu próprio `fxmanifest.lua` e uma pasta `sfx/<CATEGORIA>/` com os áudios `.awc`. Os pacotes maiores (scanner e ambiente streaming) são **divididos em partes** para o servidor carregar só o necessário.
+
+> ℹ️ Os arquivos de áudio (`.awc`) ainda **não estão neste repositório** — serão publicados em etapas. A estrutura de pastas (com `.gitkeep`) já documenta o destino de cada pacote.
 
 ## 🚀 Instalação
 
-> ⚠️ Em breve. As instruções completas serão adicionadas quando os pacotes de áudio forem publicados.
+A dublagem é dividida em **vários resources independentes** — você instala só os pacotes que quiser, evitando peso desnecessário no servidor.
 
-Resumo do funcionamento previsto:
+1. Copie a pasta `[mri_brasil]` (de dentro de [`resource/`](resource/)) para a pasta `resources/` do seu servidor.
+2. No `server.cfg`, dê `ensure` apenas nos pacotes desejados:
 
-1. Copie a pasta [`resource/`](resource/) para dentro de `resources/` do seu servidor, renomeando-a para `mri_brasil`.
-2. Adicione `ensure mri_brasil` ao seu `server.cfg`.
+   ```cfg
+   # Vozes de NPCs
+   ensure mri_brasil_s_full_amb_m      # NPCs ambientes masculinos
+   ensure mri_brasil_s_full_amb_f      # NPCs ambientes femininos
+   ensure mri_brasil_s_full_ser        # NPCs de serviço (cops, SWAT…)
+   ensure mri_brasil_s_full_gan        # Gangues
+
+   # Ambiente
+   ensure mri_brasil_oneshot_ambience
+   ensure mri_brasil_streamed_ambience_p1
+   ensure mri_brasil_streamed_ambience_p2
+
+   # Scanner da polícia (dividido em 3 partes)
+   ensure mri_brasil_police_scanner_p1
+   ensure mri_brasil_police_scanner_p2
+   ensure mri_brasil_police_scanner_p3
+   ```
+
 3. Reinicie o servidor — os áudios dublados substituem os originais automaticamente.
+
+> 💡 Não quer o scanner da polícia? Basta não dar `ensure` nas partes `mri_brasil_police_scanner_*`. O mesmo vale para qualquer outro pacote.
 
 ## 🤝 Contribuindo
 
