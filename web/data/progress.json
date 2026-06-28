@@ -1,0 +1,70 @@
+{
+  "projectName": "mri GTA Brasil",
+  "tagline": "Transformando o GTA V em Brasil — dublagem PT-BR para FiveM",
+  "lastUpdated": "2026-06-28",
+  "categories": [
+    {
+      "id": "S_FULL_AMB_M",
+      "name": "NPCs Ambientes (Masculino)",
+      "description": "Falas de pedestres e personagens masculinos do mundo aberto.",
+      "icon": "🚶",
+      "total": 107,
+      "done": 0,
+      "status": "planejado"
+    },
+    {
+      "id": "S_FULL_AMB_F",
+      "name": "NPCs Ambientes (Feminino)",
+      "description": "Falas de pedestres e personagens femininos do mundo aberto.",
+      "icon": "🚶‍♀️",
+      "total": 61,
+      "done": 0,
+      "status": "planejado"
+    },
+    {
+      "id": "S_FULL_SER",
+      "name": "NPCs de Serviço",
+      "description": "Polícia, bombeiros, SWAT, pilotos, seguranças e afins.",
+      "icon": "👮",
+      "total": 63,
+      "done": 0,
+      "status": "planejado"
+    },
+    {
+      "id": "S_FULL_GAN",
+      "name": "Gangues",
+      "description": "Ballas, Families, Lost MC e demais facções.",
+      "icon": "🔫",
+      "total": 19,
+      "done": 0,
+      "status": "planejado"
+    },
+    {
+      "id": "POLICE_SCANNER",
+      "name": "Scanner da Polícia",
+      "description": "Rádio e despacho policial ouvido nas viaturas.",
+      "icon": "📻",
+      "total": 332,
+      "done": 0,
+      "status": "planejado"
+    },
+    {
+      "id": "ONESHOT_AMBIENCE",
+      "name": "Ambiente (Pontual)",
+      "description": "Anúncios de aeroporto, sons de veículos distantes e efeitos pontuais.",
+      "icon": "🔊",
+      "total": 93,
+      "done": 0,
+      "status": "planejado"
+    },
+    {
+      "id": "STREAMED_AMBIENCE",
+      "name": "Ambiente (Streaming)",
+      "description": "Sons de ambiente contínuos espalhados pelo mapa.",
+      "icon": "🌆",
+      "total": 170,
+      "done": 0,
+      "status": "planejado"
+    }
+  ]
+}

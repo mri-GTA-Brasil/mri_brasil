@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0e14;
+  --foreground: #e8edf2;
+  --muted: #8b97a7;
+  --card: #121823;
+  --border: #1f2937;
+  --brand-green: #009b3a;
+  --brand-yellow: #ffdf00;
+  --brand-blue: #002776;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-brand-green: var(--brand-green);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-blue: var(--brand-blue);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  background-image:
+    radial-gradient(900px circle at 12% -10%, rgba(0, 155, 58, 0.14), transparent 55%),
+    radial-gradient(800px circle at 92% 8%, rgba(255, 223, 0, 0.08), transparent 50%);
+  background-attachment: fixed;
+}
