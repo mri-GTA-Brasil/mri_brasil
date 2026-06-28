@@ -66,6 +66,45 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Créditos aos criadores originais */}
+      <section className="mt-12 rounded-3xl border border-border bg-card/60 p-6 sm:p-8 backdrop-blur">
+        <h2 className="text-xl font-semibold">🙏 Créditos</h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Este projeto é uma <span className="text-foreground">continuação</span> de
+          uma ideia iniciada por uma equipe de criadores que começou a dublagem do
+          GTA V em PT-BR e, infelizmente, descontinuou o trabalho. Toda a base de
+          áudio existe graças a eles:
+        </p>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {[
+            { handle: "@matiasproducoes", url: "https://www.youtube.com/@matiasproducoes" },
+            { handle: "@godoyy", url: "https://www.youtube.com/@godoyy" },
+            { handle: "@ballasstreetgames", url: "https://www.youtube.com/@ballasstreetgames" },
+            { handle: "@nemesisfandubs", url: "https://www.youtube.com/@nemesisfandubs" },
+          ].map((c) => (
+            <li key={c.handle}>
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl border border-border bg-background/40 px-3 py-2 text-sm transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow"
+              >
+                <span aria-hidden>▶️</span>
+                {c.handle}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a
+          href="https://www.youtube.com/watch?v=y_aqU7Wrdeo"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-block text-sm text-brand-green hover:underline"
+        >
+          📺 Vídeo de apresentação do projeto original
+        </a>
+      </section>
+
       {/* Rodapé */}
       <footer className="mt-16 border-t border-border pt-6 text-center text-sm text-muted">
         <p>

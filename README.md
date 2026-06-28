@@ -87,9 +87,22 @@ Este é um projeto aberto à comunidade. Dublagens, revisões de tradução, mel
 
 A definir.
 
-## 👤 Autor
+## 🙏 Créditos
 
-Criado e mantido por **Murai** ([@mur4i](https://github.com/mur4i)).
+Este projeto é uma **continuação** de uma ideia que começou antes. A dublagem original do GTA V em PT-BR foi iniciada por uma equipe de criadores que, infelizmente, descontinuou o trabalho. Toda a base de áudio dublado existe graças a eles — e ficam aqui registrados os devidos créditos:
+
+- [@matiasproducoes](https://www.youtube.com/@matiasproducoes)
+- [@godoyy](https://www.youtube.com/@godoyy)
+- [@ballasstreetgames](https://www.youtube.com/@ballasstreetgames)
+- [@nemesisfandubs](https://www.youtube.com/@nemesisfandubs)
+
+📺 Vídeo de apresentação do projeto original: [PROJETO GTA 5 DUBLADO — SAIBA TUDO SOBRE ESSE PROJETO INCRÍVEL](https://www.youtube.com/watch?v=y_aqU7Wrdeo)
+
+> Se você é um dos criadores originais e deseja ajustar ou remover os créditos, abra uma issue ou entre em contato.
+
+## 👤 Mantenedor atual
+
+O projeto está sendo **recomeçado e mantido** por **Murai** ([@mur4i](https://github.com/mur4i)), com o objetivo de retomar e expandir a dublagem para a comunidade FiveM brasileira.
 
 ---
 
