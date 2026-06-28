@@ -1,0 +1,12 @@
+# Áudios serão adicionados por partes — ignorados por enquanto
+sfx/
+
+# Sistema operacional
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+*.swp
