@@ -83,9 +83,16 @@ jobs:
             OUT="$OUT_DIR/${STEM}.ogg"
 
             # -s 1 = primeiro subsong; representa o personagem no preview
-            ./vgmstream-cli -s 1 -o "$OUT" "$awc" > /dev/null 2>&1 \
-              && echo "✓ $STEM.ogg" \
-              || echo "✗ falha: $awc"
+            if ERR=$(./vgmstream-cli -s 1 -o "$OUT" "$awc" 2>&1 > /dev/null); then
+              echo "✓ $STEM.ogg"
+            else
+              # streamed AWC não têm subsong 1 nomeado — tenta sem -s
+              if ERR2=$(./vgmstream-cli -o "$OUT" "$awc" 2>&1 > /dev/null); then
+                echo "✓ $STEM.ogg (sem -s)"
+              else
+                echo "✗ falha: $awc :: ${ERR2:-$ERR}"
+              fi
+            fi
           done < /tmp/awc_list.txt
 
       - name: Gerar manifest.json
