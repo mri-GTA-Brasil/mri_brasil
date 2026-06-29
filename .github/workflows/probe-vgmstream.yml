@@ -1,0 +1,52 @@
+# Probe temporário: confirma flags do vgmstream para extração de TODOS os subsongs.
+name: Probe vgmstream
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download vgmstream-cli
+        run: |
+          RELEASE=$(curl -s https://api.github.com/repos/vgmstream/vgmstream/releases/latest)
+          URL=$(echo "$RELEASE" | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          for a in d.get('assets', []):
+              n = a['name'].lower()
+              if 'linux' in n and n.endswith('.zip'):
+                  print(a['browser_download_url']); break
+          ")
+          wget -q "$URL" -O vgmstream.zip
+          unzip -q vgmstream.zip -d vgmstream_bin
+          BIN=$(find vgmstream_bin -name "vgmstream-cli" -type f | head -1)
+          chmod +x "$BIN"; cp "$BIN" ./vgmstream-cli
+
+      - name: Help
+        run: ./vgmstream-cli 2>&1 | head -60 || true
+
+      - name: Metadata de 1 arquivo (contagem de subsongs)
+        run: |
+          F="resource/[mri_brasil]/mri_brasil_oneshot_ambience/sfx/ONESHOT_AMBIENCE/airport_pa_female.awc"
+          echo "=== -m -s 1 ==="
+          ./vgmstream-cli -m -s 1 "$F" 2>&1 | head -30 || true
+
+      - name: Extrair TODOS subsongs (teste)
+        run: |
+          F="resource/[mri_brasil]/mri_brasil_oneshot_ambience/sfx/ONESHOT_AMBIENCE/airport_pa_female.awc"
+          mkdir -p probe
+          echo "=== tentativa A: -S 0 -o probe/?s.ogg ==="
+          ./vgmstream-cli -S 0 -o "probe/clipA_?s.ogg" "$F" 2>&1 | tail -5 || true
+          echo "=== tentativa B: -S 0 -o probe/?02s.ogg ==="
+          ./vgmstream-cli -S 0 -o "probe/clipB_?02s.ogg" "$F" 2>&1 | tail -5 || true
+          echo "=== RESULTADO probe/ ==="
+          ls -la probe/ || true
+          echo "total ogg:"; ls probe/*.ogg 2>/dev/null | wc -l
