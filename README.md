@@ -33,6 +33,7 @@ Este é um **resource de substituição de assets**: ele não roda scripts no se
 mri_brasil/
 ├── resource/                       # Os resources FiveM/RedM
 │   └── [mri_brasil]/                 # Pasta agrupadora (instale só os pacotes que quiser)
+│       │  ── 🎙️ Dublagem (áudio) ──
 │       ├── mri_brasil_s_full_amb_m/     # NPCs ambientes masculinos        (107)
 │       ├── mri_brasil_s_full_amb_f/     # NPCs ambientes femininos         (61)
 │       ├── mri_brasil_s_full_ser/       # NPCs de serviço (cops, SWAT…)    (63)
@@ -42,11 +43,18 @@ mri_brasil/
 │       ├── mri_brasil_streamed_ambience_p2/  # Ambiente streaming (2/2)    (85)
 │       ├── mri_brasil_police_scanner_p1/     # Scanner da polícia (1/3)    (111)
 │       ├── mri_brasil_police_scanner_p2/     # Scanner da polícia (2/3)    (111)
-│       └── mri_brasil_police_scanner_p3/     # Scanner da polícia (3/3)    (110)
+│       ├── mri_brasil_police_scanner_p3/     # Scanner da polícia (3/3)    (110)
+│       │  ── 🏙️ Ambientação visual São Paulo (fonte: gta5-mods) ──
+│       ├── mri_brasil_props/             # Props, placas e mobiliário urbano (~148 MB)
+│       ├── mri_brasil_peds_policia/      # Skins de polícia, forças e gangues (~164 MB)
+│       ├── mri_brasil_viaturas/          # Liveries de viaturas               (~59 MB)
+│       ├── mri_brasil_correios/          # Carteiros + van de entrega         (~10 MB)
+│       ├── mri_brasil_mapa_aeroporto/    # Retextura do aeroporto            (~158 MB)
+│       └── mri_brasil_mapa_zancudo/      # Retextura de Fort Zancudo          (~61 MB)
 └── web/                            # Site de progresso da dublagem (Next.js)
 ```
 
-Cada sub-resource tem seu próprio `fxmanifest.lua` e uma pasta `sfx/<CATEGORIA>/` com os áudios `.awc`. Os pacotes maiores (scanner e ambiente streaming) são **divididos em partes** para o servidor carregar só o necessário.
+Os pacotes de **dublagem** têm uma pasta `sfx/<CATEGORIA>/` com os áudios `.awc`; os de **ambientação visual** têm uma pasta `stream/` com os modelos/texturas (`.ytd`, `.yft`, `.ydr`). Cada sub-resource tem seu próprio `fxmanifest.lua`, e os pacotes maiores são **divididos em partes** para o servidor carregar só o necessário.
 
 > ℹ️ Os arquivos de áudio (`.awc`) ainda **não estão neste repositório** — serão publicados em etapas. A estrutura de pastas (com `.gitkeep`) já documenta o destino de cada pacote.
 
@@ -73,9 +81,17 @@ A dublagem é dividida em **vários resources independentes** — você instala 
    ensure mri_brasil_police_scanner_p1
    ensure mri_brasil_police_scanner_p2
    ensure mri_brasil_police_scanner_p3
+
+   # Ambientação visual São Paulo
+   ensure mri_brasil_props             # props, placas, mobiliário urbano
+   ensure mri_brasil_peds_policia      # skins de polícia, forças e gangues
+   ensure mri_brasil_viaturas          # liveries de viaturas
+   ensure mri_brasil_correios          # carteiros + van
+   ensure mri_brasil_mapa_aeroporto    # retextura do aeroporto
+   ensure mri_brasil_mapa_zancudo      # retextura de Fort Zancudo
    ```
 
-3. Reinicie o servidor — os áudios dublados substituem os originais automaticamente.
+3. Reinicie o servidor — os áudios dublados e os assets visuais substituem os originais automaticamente.
 
 > 💡 Não quer o scanner da polícia? Basta não dar `ensure` nas partes `mri_brasil_police_scanner_*`. O mesmo vale para qualquer outro pacote.
 
@@ -98,7 +114,13 @@ Este projeto é uma **continuação** de uma ideia que começou antes. A dublage
 
 📺 Vídeo de apresentação do projeto original: [PROJETO GTA 5 DUBLADO — SAIBA TUDO SOBRE ESSE PROJETO INCRÍVEL](https://www.youtube.com/watch?v=y_aqU7Wrdeo)
 
-> Se você é um dos criadores originais e deseja ajustar ou remover os créditos, abra uma issue ou entre em contato.
+### 🏙️ Ambientação visual (props, peds, viaturas, mapas)
+
+Os assets de ambientação São Paulo (modelos, texturas e skins) têm como fonte o **[GTA5-Mods](https://www.gta5-mods.com/)** e seus respectivos autores. Os créditos individuais de cada mod serão detalhados conforme as fontes forem confirmadas.
+
+> 🔗 É um dos autores dos assets visuais? Abra uma issue com o link do seu mod no GTA5-Mods para crédito direto, ou para ajuste/remoção.
+
+> Se você é um dos criadores originais (dublagem) e deseja ajustar ou remover os créditos, abra uma issue ou entre em contato.
 
 ## 👤 Mantenedor atual
 
