@@ -53,3 +53,30 @@ export function getCategoriesWithSummary(): CategoryMeta[] {
 export function findCategoryMeta(id: string): CategoryMeta | undefined {
   return getCategoriesWithSummary().find((c) => c.id === id);
 }
+
+export interface DubStats {
+  pt: number;
+  en: number;
+  unknown: number;
+  clips: number;
+  speech: number; // pt + en (universo que precisa de dublagem)
+  percent: number; // pt / speech
+}
+
+/** Agrega os números de detecção de todas as categorias. */
+export function getDubStats(): DubStats {
+  const summary = getSummary();
+  let pt = 0,
+    en = 0,
+    unknown = 0,
+    clips = 0;
+  for (const s of Object.values(summary)) {
+    pt += s.pt;
+    en += s.en;
+    unknown += s.unknown;
+    clips += s.clips;
+  }
+  const speech = pt + en;
+  const percent = speech > 0 ? Math.round((pt / speech) * 100) : 0;
+  return { pt, en, unknown, clips, speech, percent };
+}

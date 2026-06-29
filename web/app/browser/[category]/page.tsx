@@ -20,11 +20,8 @@ export default async function CategoryPage({
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-20">
       <header>
-        <Link
-          href="/browser/"
-          className="text-sm text-brand-green hover:underline"
-        >
-          ← Todas as categorias
+        <Link href="/" className="text-sm text-brand-green hover:underline">
+          ← Início
         </Link>
         <div className="mt-4 flex items-center gap-3">
           <span className="text-4xl">{meta.icon}</span>

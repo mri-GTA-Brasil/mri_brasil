@@ -1,18 +1,15 @@
 import Link from "next/link";
-import CategoryCard from "@/components/CategoryCard";
-import ProgressBar from "@/components/ProgressBar";
-import { getProgress, getTotals } from "@/lib/progress";
+import SegmentedBar from "@/components/SegmentedBar";
+import { getProgress } from "@/lib/progress";
+import { getCategoriesWithSummary, getDubStats } from "@/lib/clips";
 
 export default function Home() {
-  const { projectName, tagline, lastUpdated, categories } = getProgress();
-  const totals = getTotals(categories);
+  const { projectName, tagline } = getProgress();
+  const cats = getCategoriesWithSummary();
+  const stats = getDubStats();
+  const hasData = stats.clips > 0;
 
-  const formattedDate = new Date(lastUpdated).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  const nf = (n: number) => n.toLocaleString("pt-BR");
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-20">
@@ -29,51 +26,113 @@ export default function Home() {
         <p className="mx-auto mt-4 max-w-xl text-lg text-muted">{tagline}</p>
       </header>
 
-      {/* Progresso geral */}
-      <section className="mt-12 rounded-3xl border border-border bg-card/60 p-6 sm:p-8 backdrop-blur">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-sm font-medium uppercase tracking-wider text-muted">
-              Progresso geral
-            </h2>
-            <p className="mt-1 text-4xl font-bold tabular-nums">
-              {totals.percent}
-              <span className="text-2xl text-muted">%</span>
+      {hasData && (
+        <>
+          {/* Progresso real da dublagem (detecção automática) */}
+          <section className="mt-12 rounded-3xl border border-border bg-card/60 p-6 sm:p-8 backdrop-blur">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-sm font-medium uppercase tracking-wider text-muted">
+                  Progresso da dublagem
+                </h2>
+                <p className="mt-1 text-5xl font-bold tabular-nums">
+                  {stats.percent}
+                  <span className="text-2xl text-muted">%</span>
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  das falas já estão em português
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5 text-sm">
+                <Legend color="bg-brand-green" label="Dubladas (PT)" n={stats.pt} />
+                <Legend
+                  color="bg-brand-yellow"
+                  label="Faltam (EN)"
+                  n={stats.en}
+                />
+                <Legend
+                  color="bg-muted/40"
+                  label="Efeitos / sem fala"
+                  n={stats.unknown}
+                />
+              </div>
+            </div>
+            <div className="mt-5">
+              <SegmentedBar
+                pt={stats.pt}
+                en={stats.en}
+                unknown={stats.unknown}
+                size="lg"
+              />
+            </div>
+            <p className="mt-3 text-xs text-muted">
+              {nf(stats.clips)} falas catalogadas. O percentual considera só falas
+              ({nf(stats.pt)} de {nf(stats.speech)}); efeitos e trechos sem fala
+              ficam de fora. Classificação por idioma é automática — serve de guia.
             </p>
-          </div>
-          <p className="text-sm text-muted">
-            <span className="font-semibold text-foreground tabular-nums">
-              {totals.done.toLocaleString("pt-BR")}
-            </span>{" "}
-            de{" "}
-            <span className="font-semibold text-foreground tabular-nums">
-              {totals.total.toLocaleString("pt-BR")}
-            </span>{" "}
-            áudios dublados
-          </p>
-        </div>
-        <div className="mt-5">
-          <ProgressBar percent={totals.percent} size="lg" />
-        </div>
-      </section>
+          </section>
 
-      {/* Categorias */}
-      <section className="mt-12">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Pacotes de áudio</h2>
-          <Link
-            href="/browser"
-            className="rounded-full border border-brand-green/40 bg-brand-green/10 px-4 py-1.5 text-sm text-brand-green transition-colors hover:bg-brand-green/20"
-          >
-            🎵 Preview de Áudio
-          </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {categories.map((c) => (
-            <CategoryCard key={c.id} category={c} />
-          ))}
-        </div>
-      </section>
+          {/* Categorias com progresso real → entram no catálogo */}
+          <section className="mt-12">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Por categoria</h2>
+              <span className="text-sm text-muted">clique para ouvir as falas</span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {cats.map((c) => {
+                const s = c.summary;
+                const disabled = !s || s.clips === 0;
+                const speech = s ? s.pt + s.en : 0;
+                const p = speech > 0 ? Math.round((s!.pt / speech) * 100) : 0;
+                const inner = (
+                  <div
+                    className={`h-full rounded-2xl border border-border bg-card/60 p-5 transition-colors ${
+                      disabled ? "opacity-50" : "hover:border-brand-green/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl" aria-hidden>
+                          {c.icon}
+                        </span>
+                        <h3 className="font-semibold leading-tight">{c.name}</h3>
+                      </div>
+                      {s && s.en > 0 && (
+                        <span className="shrink-0 rounded-full bg-brand-yellow/15 px-2 py-0.5 text-xs text-brand-yellow tabular-nums">
+                          {nf(s.en)} faltam
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm text-muted">{c.description}</p>
+                    {s ? (
+                      <div className="mt-4">
+                        <SegmentedBar pt={s.pt} en={s.en} unknown={s.unknown} />
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                          <span className="text-muted tabular-nums">
+                            {nf(s.pt)} / {nf(speech)} dubladas
+                          </span>
+                          <span className="font-semibold tabular-nums">{p}%</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-xs text-muted">
+                        Sem clipes disponíveis (formato não suportado).
+                      </p>
+                    )}
+                  </div>
+                );
+                return disabled ? (
+                  <div key={c.id}>{inner}</div>
+                ) : (
+                  <Link key={c.id} href={`/browser/${c.id}/`}>
+                    {inner}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </>
+      )}
 
       {/* Créditos aos criadores originais */}
       <section className="mt-12 rounded-3xl border border-border bg-card/60 p-6 sm:p-8 backdrop-blur">
@@ -117,9 +176,6 @@ export default function Home() {
       {/* Rodapé */}
       <footer className="mt-16 border-t border-border pt-6 text-center text-sm text-muted">
         <p>
-          Última atualização: <span className="text-foreground">{formattedDate}</span>
-        </p>
-        <p className="mt-2">
           Projeto comunitário · feito com 💛💚 para a comunidade FiveM brasileira
         </p>
         <a
@@ -130,5 +186,15 @@ export default function Home() {
         </a>
       </footer>
     </main>
+  );
+}
+
+function Legend({ color, label, n }: { color: string; label: string; n: number }) {
+  return (
+    <span className="flex items-center gap-2 tabular-nums">
+      <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />
+      <span className="text-muted">{label}</span>
+      <span className="ml-auto font-semibold">{n.toLocaleString("pt-BR")}</span>
+    </span>
   );
 }
