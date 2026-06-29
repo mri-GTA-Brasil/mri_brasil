@@ -9,8 +9,10 @@ const nextConfig: NextConfig = {
   output: "export",
   images: { unoptimized: true },
   basePath: isProd ? `/${repo}` : "",
-  // GitHub Pages serve melhor com URLs em diretório (/, /me/ -> index.html)
   trailingSlash: true,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isProd ? `/${repo}` : "",
+  },
 };
 
 export default nextConfig;

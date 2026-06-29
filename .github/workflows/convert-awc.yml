@@ -1,0 +1,127 @@
+# Converte AWC → OGG usando vgmstream sempre que novos áudios são adicionados.
+# O preview é o primeiro subsong de cada AWC (uma amostra representativa por personagem).
+name: Convert AWC → OGG previews
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "resource/**/*.awc"
+  workflow_dispatch:
+    inputs:
+      full_rebuild:
+        description: "Reconverter TODOS os AWC (ignora diff)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Download vgmstream-cli
+        run: |
+          RELEASE=$(curl -s https://api.github.com/repos/vgmstream/vgmstream/releases/latest)
+          URL=$(echo "$RELEASE" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for a in data.get('assets', []):
+              n = a['name'].lower()
+              if 'linux' in n and n.endswith('.zip'):
+                  print(a['browser_download_url'])
+                  break
+          ")
+          echo "Baixando: $URL"
+          wget -q "$URL" -O vgmstream.zip
+          unzip -q vgmstream.zip -d vgmstream_bin
+          BIN=$(find vgmstream_bin -name "vgmstream-cli" -type f | head -1)
+          chmod +x "$BIN"
+          cp "$BIN" ./vgmstream-cli
+          ./vgmstream-cli --version 2>&1 | head -1 || true
+
+      - name: Listar AWC para converter
+        id: list
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.full_rebuild }}" == "true" ]]; then
+            git ls-files "resource/" | grep "\.awc$" > /tmp/awc_list.txt
+          else
+            # Na primeira execução (sem commit anterior), converte tudo
+            PARENT=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+            if [ -z "$PARENT" ]; then
+              git ls-files "resource/" | grep "\.awc$" > /tmp/awc_list.txt
+            else
+              git diff --name-only HEAD~1 HEAD | grep "\.awc$" > /tmp/awc_list.txt || true
+            fi
+          fi
+          COUNT=$(wc -l < /tmp/awc_list.txt | tr -d ' ')
+          echo "Arquivos a converter: $COUNT"
+          cat /tmp/awc_list.txt
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Converter AWC → OGG (primeiro subsong)
+        if: steps.list.outputs.count != '0'
+        run: |
+          mkdir -p web/public/previews
+
+          while IFS= read -r awc; do
+            [ -f "$awc" ] || continue
+
+            # resource/[mri_brasil]/mri_brasil_PACK/sfx/CATEGORY/file.awc
+            PACK=$(echo "$awc" | awk -F'/' '{print $3}')
+            CATEGORY=$(echo "$awc" | awk -F'/' '{print $5}')
+            STEM=$(basename "$awc" .awc)
+
+            OUT_DIR="web/public/previews/$PACK/$CATEGORY"
+            mkdir -p "$OUT_DIR"
+            OUT="$OUT_DIR/${STEM}.ogg"
+
+            # -s 1 = primeiro subsong; representa o personagem no preview
+            ./vgmstream-cli -s 1 -o "$OUT" "$awc" > /dev/null 2>&1 \
+              && echo "✓ $STEM.ogg" \
+              || echo "✗ falha: $awc"
+          done < /tmp/awc_list.txt
+
+      - name: Gerar manifest.json
+        run: |
+          python3 - << 'PYEOF'
+          import os, json
+
+          ROOT = "web/public/previews"
+          manifest = {}
+
+          if os.path.isdir(ROOT):
+              for pack in sorted(os.listdir(ROOT)):
+                  pack_path = os.path.join(ROOT, pack)
+                  if not os.path.isdir(pack_path):
+                      continue
+                  manifest[pack] = {}
+                  for cat in sorted(os.listdir(pack_path)):
+                      cat_path = os.path.join(pack_path, cat)
+                      if not os.path.isdir(cat_path):
+                          continue
+                      files = sorted(f for f in os.listdir(cat_path) if f.endswith(".ogg"))
+                      if files:
+                          manifest[pack][cat] = files
+
+          os.makedirs(ROOT, exist_ok=True)
+          with open(os.path.join(ROOT, "manifest.json"), "w") as f:
+              json.dump(manifest, f, separators=(",", ":"))
+
+          total = sum(len(v) for cats in manifest.values() for v in cats.values())
+          print(f"manifest.json: {len(manifest)} packs, {total} OGGs")
+          PYEOF
+
+      - name: Commit previews
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: AWC → OGG previews"
+          file_pattern: "web/public/previews/**"
+          commit_user_name: mur4i
+          commit_user_email: "89431075+mur4i@users.noreply.github.com"

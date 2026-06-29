@@ -1,3 +1,4 @@
+import Link from "next/link";
 import CategoryCard from "@/components/CategoryCard";
 import ProgressBar from "@/components/ProgressBar";
 import { getProgress, getTotals } from "@/lib/progress";
@@ -58,7 +59,15 @@ export default function Home() {
 
       {/* Categorias */}
       <section className="mt-12">
-        <h2 className="mb-5 text-xl font-semibold">Pacotes de áudio</h2>
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Pacotes de áudio</h2>
+          <Link
+            href="/browser"
+            className="rounded-full border border-brand-green/40 bg-brand-green/10 px-4 py-1.5 text-sm text-brand-green transition-colors hover:bg-brand-green/20"
+          >
+            🎵 Preview de Áudio
+          </Link>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {categories.map((c) => (
             <CategoryCard key={c.id} category={c} />
