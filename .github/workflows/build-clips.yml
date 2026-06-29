@@ -136,9 +136,13 @@ jobs:
 
           for awc in mine:
               parts = awc.split(os.sep)
-              pack = parts[1]
+              # o pacote é a parte que casa com o mapa (caminho: resource/[mri_brasil]/<pack>/sfx/...)
+              pack = next((p for p in parts if p in PACK_TO_CAT), None)
+              if pack is None:
+                  print(f"  AVISO: pacote desconhecido em {awc}, pulando")
+                  continue
               stem = os.path.basename(awc)[:-4]
-              cat = PACK_TO_CAT.get(pack, "OUTROS")
+              cat = PACK_TO_CAT[pack]
 
               tmp = "tmp_wav"
               shutil.rmtree(tmp, ignore_errors=True)
@@ -208,10 +212,12 @@ jobs:
           AUDIO_SRC = "artifacts/audio"
           AUDIO_DST = os.path.join(CLIPS_DIR, "audio")
           CAT_DIR = os.path.join(CLIPS_DIR, "cat")
+
+          # 0) Zera o catálogo inteiro para não deixar resíduo de runs anteriores
+          shutil.rmtree(CLIPS_DIR, ignore_errors=True)
           os.makedirs(CAT_DIR, exist_ok=True)
 
-          # 1) Mover áudios extraídos (limpa antigos primeiro)
-          shutil.rmtree(AUDIO_DST, ignore_errors=True)
+          # 1) Move áudios extraídos
           if os.path.isdir(AUDIO_SRC):
               shutil.move(AUDIO_SRC, AUDIO_DST)
 
