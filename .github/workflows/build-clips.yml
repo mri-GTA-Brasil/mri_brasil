@@ -1,0 +1,264 @@
+# Pipeline completo: extrai TODOS os subsongs de cada AWC, encoda em Opus,
+# detecta idioma (PT/EN/?) e gera o catálogo para o site.
+# Sharded em paralelo (matrix). Dispare manualmente.
+name: Build clips (extract + opus + langdetect)
+
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: "Número de shards paralelos"
+        type: string
+        default: "16"
+      limit_per_shard:
+        description: "Máx de AWC por shard (0 = todos; use 2 p/ teste rápido)"
+        type: string
+        default: "0"
+
+permissions:
+  contents: write
+
+env:
+  SHARDS: ${{ inputs.shards }}
+  LIMIT: ${{ inputs.limit_per_shard }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - id: gen
+        run: |
+          python3 - << 'PYEOF' >> "$GITHUB_OUTPUT"
+          import json, os
+          n = int(os.environ["SHARDS"])
+          print("matrix=" + json.dumps({"shard": list(range(n))}))
+          PYEOF
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Install faster-whisper
+        run: pip install -q faster-whisper
+
+      - name: Download vgmstream-cli
+        run: |
+          RELEASE=$(curl -s https://api.github.com/repos/vgmstream/vgmstream/releases/latest)
+          URL=$(echo "$RELEASE" | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          for a in d.get('assets', []):
+              n = a['name'].lower()
+              if 'linux' in n and n.endswith('.zip'):
+                  print(a['browser_download_url']); break
+          ")
+          wget -q "$URL" -O vgmstream.zip
+          unzip -q vgmstream.zip -d vgmstream_bin
+          BIN=$(find vgmstream_bin -name "vgmstream-cli" -type f | head -1)
+          chmod +x "$BIN"; cp "$BIN" ./vgmstream-cli
+
+      - name: Processar shard ${{ matrix.shard }}
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 - << 'PYEOF'
+          import os, sys, json, struct, subprocess, glob, shutil, time
+          from faster_whisper import WhisperModel, decode_audio
+
+          SHARD = int(os.environ["SHARD"])
+          NSHARDS = int(os.environ["SHARDS"])
+          LIMIT = int(os.environ["LIMIT"])
+          ROOT = "resource/[mri_brasil]"
+          OUT_AUDIO = "out/audio"
+          PACK_TO_CAT = {
+              "mri_brasil_s_full_amb_m": "S_FULL_AMB_M",
+              "mri_brasil_s_full_amb_f": "S_FULL_AMB_F",
+              "mri_brasil_s_full_ser": "S_FULL_SER",
+              "mri_brasil_s_full_gan": "S_FULL_GAN",
+              "mri_brasil_oneshot_ambience": "ONESHOT_AMBIENCE",
+              "mri_brasil_streamed_ambience_p1": "STREAMED_AMBIENCE",
+              "mri_brasil_streamed_ambience_p2": "STREAMED_AMBIENCE",
+              "mri_brasil_police_scanner_p1": "POLICE_SCANNER",
+              "mri_brasil_police_scanner_p2": "POLICE_SCANNER",
+              "mri_brasil_police_scanner_p3": "POLICE_SCANNER",
+          }
+
+          # 1) Lista determinística de AWC ADAT (ordenada), filtra por shard
+          all_awc = []
+          for dp, _, files in os.walk(ROOT):
+              for fn in files:
+                  if fn.endswith(".awc"):
+                      all_awc.append(os.path.join(dp, fn))
+          all_awc.sort()
+          def is_adat(p):
+              try:
+                  with open(p, "rb") as f:
+                      return f.read(4) == b"ADAT"
+              except Exception:
+                  return False
+          adat = [p for p in all_awc if is_adat(p)]
+          mine = [p for i, p in enumerate(adat) if i % NSHARDS == SHARD]
+          if LIMIT > 0:
+              mine = mine[:LIMIT]
+          print(f"Shard {SHARD}/{NSHARDS}: {len(mine)} AWC de {len(adat)} ADAT")
+
+          model = WhisperModel("base", device="cpu", compute_type="int8")
+
+          def classify(wav):
+              audio = decode_audio(wav)
+              _, _, all_probs = model.detect_language(audio)
+              d = dict(all_probs)
+              ppt, pen = d.get("pt", 0.0), d.get("en", 0.0)
+              if max(ppt, pen) < 0.30:
+                  return "u"            # indeterminado / nao-fala
+              return "p" if ppt >= pen else "e"
+
+          os.makedirs(OUT_AUDIO, exist_ok=True)
+          manifest = []   # {category, pack, stem, i, l}
+          t0 = time.time()
+          done = 0
+
+          for awc in mine:
+              parts = awc.split(os.sep)
+              pack = parts[1]
+              stem = os.path.basename(awc)[:-4]
+              cat = PACK_TO_CAT.get(pack, "OUTROS")
+
+              tmp = "tmp_wav"
+              shutil.rmtree(tmp, ignore_errors=True)
+              os.makedirs(tmp, exist_ok=True)
+              subprocess.run(
+                  ["./vgmstream-cli", "-S", "0", "-o", f"{tmp}/?05s.wav", awc],
+                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+              )
+              outdir = os.path.join(OUT_AUDIO, pack, stem)
+              os.makedirs(outdir, exist_ok=True)
+              for wav in sorted(glob.glob(f"{tmp}/*.wav")):
+                  idx = int(os.path.basename(wav)[:-4])  # 1-based
+                  lang = classify(wav)
+                  ogg = os.path.join(outdir, f"{idx}.ogg")
+                  subprocess.run(
+                      ["ffmpeg", "-nostdin", "-loglevel", "error", "-y",
+                       "-i", wav, "-c:a", "libopus", "-b:a", "16k",
+                       "-application", "voip", ogg],
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                  )
+                  manifest.append({"category": cat, "pack": pack, "stem": stem, "i": idx, "l": lang})
+              shutil.rmtree(tmp, ignore_errors=True)
+              done += 1
+              if done % 5 == 0:
+                  el = time.time() - t0
+                  print(f"  {done}/{len(mine)} arquivos, {len(manifest)} clipes, {el:.0f}s")
+
+          os.makedirs("out", exist_ok=True)
+          with open(f"out/shard-{SHARD}.json", "w") as f:
+              json.dump(manifest, f, separators=(",", ":"))
+          print(f"Shard {SHARD} pronto: {len(manifest)} clipes em {time.time()-t0:.0f}s")
+          PYEOF
+
+      - name: Upload artifact do shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: clips-shard-${{ matrix.shard }}
+          path: out/
+          retention-days: 1
+          if-no-files-found: error
+
+  combine:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Baixar todos os artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: clips-shard-*
+          merge-multiple: true
+
+      - name: Montar catálogo e mover áudios
+        run: |
+          python3 - << 'PYEOF'
+          import os, json, glob, shutil
+
+          CLIPS_DIR = "web/public/clips"
+          AUDIO_SRC = "artifacts/audio"
+          AUDIO_DST = os.path.join(CLIPS_DIR, "audio")
+          CAT_DIR = os.path.join(CLIPS_DIR, "cat")
+          os.makedirs(CAT_DIR, exist_ok=True)
+
+          # 1) Mover áudios extraídos (limpa antigos primeiro)
+          shutil.rmtree(AUDIO_DST, ignore_errors=True)
+          if os.path.isdir(AUDIO_SRC):
+              shutil.move(AUDIO_SRC, AUDIO_DST)
+
+          # 2) Juntar manifests de todos os shards
+          entries = []
+          for sf in sorted(glob.glob("artifacts/shard-*.json")):
+              with open(sf) as f:
+                  entries.extend(json.load(f))
+          print(f"Total de clipes: {len(entries)}")
+
+          # 3) Por categoria -> por arquivo -> lista de clipes
+          cats = {}   # cat -> stem -> {"pack":.., "clips":[{i,l}]}
+          for e in entries:
+              c = cats.setdefault(e["category"], {})
+              fobj = c.setdefault(e["stem"], {"pack": e["pack"], "clips": []})
+              fobj["clips"].append({"i": e["i"], "l": e["l"]})
+          for c in cats.values():
+              for fobj in c.values():
+                  fobj["clips"].sort(key=lambda x: x["i"])
+
+          # 4) Escreve um json por categoria + summary global
+          summary = {}
+          for cat, files in cats.items():
+              with open(os.path.join(CAT_DIR, f"{cat}.json"), "w") as f:
+                  json.dump(files, f, separators=(",", ":"))
+              tot = pt = en = un = 0
+              for fobj in files.values():
+                  for cl in fobj["clips"]:
+                      tot += 1
+                      if cl["l"] == "p": pt += 1
+                      elif cl["l"] == "e": en += 1
+                      else: un += 1
+              summary[cat] = {"files": len(files), "clips": tot, "pt": pt, "en": en, "unknown": un}
+
+          with open(os.path.join(CLIPS_DIR, "summary.json"), "w") as f:
+              json.dump(summary, f, separators=(",", ":"), ensure_ascii=False)
+
+          print("Resumo por categoria:")
+          for c, s in summary.items():
+              print(f"  {c:20s} arquivos={s['files']:4d} clipes={s['clips']:6d} "
+                    f"PT={s['pt']:6d} EN={s['en']:5d} ?={s['unknown']:5d}")
+          PYEOF
+
+      - name: Commit catálogo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "feat: catálogo de clipes (extração + idioma PT/EN)"
+          file_pattern: "web/public/clips/**"
+          commit_user_name: mur4i
+          commit_user_email: "89431075+mur4i@users.noreply.github.com"
