@@ -41,36 +41,46 @@ jobs:
           BIN=$(find vgmstream_bin -name "vgmstream-cli" -type f | head -1)
           chmod +x "$BIN"; cp "$BIN" ./vgmstream-cli
 
-      - name: Extrair WAV + encodar Opus (medir tamanho)
+      - name: Extrair WAVs de 2 arquivos (cop=PT? / amb_m=EN?)
         run: |
-          F="resource/[mri_brasil]/mri_brasil_s_full_ser/sfx/S_FULL_SER/s_m_y_cop_01_white_full_01.awc"
-          mkdir -p wav ogg
-          # extrai todos os subsongs como WAV
-          ./vgmstream-cli -S 0 -o "wav/?03s.wav" "$F" > /dev/null 2>&1
-          echo "WAVs extraidos: $(ls wav/*.wav | wc -l)"
-          # encoda os 5 primeiros pra opus e mede
-          for i in 001 002 003 004 005; do
-            [ -f "wav/$i.wav" ] || continue
-            ffmpeg -nostdin -loglevel error -y -i "wav/$i.wav" \
-              -c:a libopus -b:a 16k -application voip "ogg/$i.ogg"
-            W=$(stat -c%s "wav/$i.wav"); O=$(stat -c%s "ogg/$i.ogg")
-            echo "  $i: WAV ${W}b -> OGG ${O}b"
-          done
+          COP="resource/[mri_brasil]/mri_brasil_s_full_ser/sfx/S_FULL_SER/s_m_y_cop_01_white_full_01.awc"
+          AMB=$(git ls-files "resource/[mri_brasil]/mri_brasil_s_full_amb_m" | grep "\.awc$" | head -1)
+          echo "AMB = $AMB"
+          mkdir -p wav_cop wav_amb ogg
+          ./vgmstream-cli -S 0 -o "wav_cop/?03s.wav" "$COP" > /dev/null 2>&1
+          ./vgmstream-cli -S 0 -o "wav_amb/?03s.wav" "$AMB" > /dev/null 2>&1
+          echo "cop WAVs: $(ls wav_cop/*.wav | wc -l) | amb WAVs: $(ls wav_amb/*.wav | wc -l)"
+          # tamanho opus
+          ffmpeg -nostdin -loglevel error -y -i "wav_cop/001.wav" -c:a libopus -b:a 16k -application voip "ogg/x.ogg"
+          echo "opus exemplo: $(stat -c%s ogg/x.ogg) bytes"
 
-      - name: Detectar idioma (faster-whisper tiny)
+      - name: Detectar idioma (base, P(pt) vs P(en))
         run: |
           python3 - << 'PYEOF'
           import os, glob, time
           from faster_whisper import WhisperModel, decode_audio
 
-          model = WhisperModel("tiny", device="cpu", compute_type="int8")
-          wavs = sorted(glob.glob("wav/*.wav"))[:12]
-          print(f"Detectando idioma em {len(wavs)} clipes:")
-          t0 = time.time()
-          for w in wavs:
-              audio = decode_audio(w)
-              lang, prob, _ = model.detect_language(audio)
-              print(f"  {os.path.basename(w)}: {lang} ({prob:.2f})")
-          dt = time.time() - t0
-          print(f"\n{len(wavs)} clipes em {dt:.1f}s -> {dt/len(wavs):.2f}s/clipe")
+          model = WhisperModel("base", device="cpu", compute_type="int8")
+
+          def classify(path):
+              audio = decode_audio(path)
+              # all_probs: lista [(lang, prob), ...] sobre todos os idiomas
+              lang, prob, all_probs = model.detect_language(audio)
+              d = dict(all_probs)
+              ppt, pen = d.get("pt", 0.0), d.get("en", 0.0)
+              if max(ppt, pen) < 0.30:
+                  verdict = "?"   # provavel nao-fala/ruido
+              else:
+                  verdict = "PT" if ppt >= pen else "EN"
+              return ppt, pen, lang, prob, verdict
+
+          for label, folder in [("COP (esperado PT)", "wav_cop"), ("AMB_M (esperado EN)", "wav_amb")]:
+              wavs = sorted(glob.glob(f"{folder}/*.wav"))[:15]
+              print(f"\n=== {label} — {len(wavs)} clipes ===")
+              t0 = time.time()
+              for w in wavs:
+                  ppt, pen, lang, prob, verdict = classify(w)
+                  print(f"  {os.path.basename(w)}: {verdict:2s}  P(pt)={ppt:.2f} P(en)={pen:.2f}  [top={lang} {prob:.2f}]")
+              dt = time.time() - t0
+              print(f"  -> {dt/len(wavs):.2f}s/clipe")
           PYEOF
