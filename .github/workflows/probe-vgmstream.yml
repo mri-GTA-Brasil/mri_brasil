@@ -1,4 +1,4 @@
-# Probe temporário: confirma flags do vgmstream para extração de TODOS os subsongs.
+# Probe temporário: valida pipeline completo (vgmstream → ffmpeg opus → langdetect).
 name: Probe vgmstream
 
 on:
@@ -13,6 +13,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Install faster-whisper
+        run: pip install -q faster-whisper
 
       - name: Download vgmstream-cli
         run: |
@@ -30,23 +41,36 @@ jobs:
           BIN=$(find vgmstream_bin -name "vgmstream-cli" -type f | head -1)
           chmod +x "$BIN"; cp "$BIN" ./vgmstream-cli
 
-      - name: Help
-        run: ./vgmstream-cli 2>&1 | head -60 || true
-
-      - name: Metadata de 1 arquivo (contagem de subsongs)
+      - name: Extrair WAV + encodar Opus (medir tamanho)
         run: |
-          F="resource/[mri_brasil]/mri_brasil_oneshot_ambience/sfx/ONESHOT_AMBIENCE/airport_pa_female.awc"
-          echo "=== -m -s 1 ==="
-          ./vgmstream-cli -m -s 1 "$F" 2>&1 | head -30 || true
+          F="resource/[mri_brasil]/mri_brasil_s_full_ser/sfx/S_FULL_SER/s_m_y_cop_01_white_full_01.awc"
+          mkdir -p wav ogg
+          # extrai todos os subsongs como WAV
+          ./vgmstream-cli -S 0 -o "wav/?03s.wav" "$F" > /dev/null 2>&1
+          echo "WAVs extraidos: $(ls wav/*.wav | wc -l)"
+          # encoda os 5 primeiros pra opus e mede
+          for i in 001 002 003 004 005; do
+            [ -f "wav/$i.wav" ] || continue
+            ffmpeg -nostdin -loglevel error -y -i "wav/$i.wav" \
+              -c:a libopus -b:a 16k -application voip "ogg/$i.ogg"
+            W=$(stat -c%s "wav/$i.wav"); O=$(stat -c%s "ogg/$i.ogg")
+            echo "  $i: WAV ${W}b -> OGG ${O}b"
+          done
 
-      - name: Extrair TODOS subsongs (teste)
+      - name: Detectar idioma (faster-whisper tiny)
         run: |
-          F="resource/[mri_brasil]/mri_brasil_oneshot_ambience/sfx/ONESHOT_AMBIENCE/airport_pa_female.awc"
-          mkdir -p probe
-          echo "=== tentativa A: -S 0 -o probe/?s.ogg ==="
-          ./vgmstream-cli -S 0 -o "probe/clipA_?s.ogg" "$F" 2>&1 | tail -5 || true
-          echo "=== tentativa B: -S 0 -o probe/?02s.ogg ==="
-          ./vgmstream-cli -S 0 -o "probe/clipB_?02s.ogg" "$F" 2>&1 | tail -5 || true
-          echo "=== RESULTADO probe/ ==="
-          ls -la probe/ || true
-          echo "total ogg:"; ls probe/*.ogg 2>/dev/null | wc -l
+          python3 - << 'PYEOF'
+          import os, glob, time
+          from faster_whisper import WhisperModel, decode_audio
+
+          model = WhisperModel("tiny", device="cpu", compute_type="int8")
+          wavs = sorted(glob.glob("wav/*.wav"))[:12]
+          print(f"Detectando idioma em {len(wavs)} clipes:")
+          t0 = time.time()
+          for w in wavs:
+              audio = decode_audio(w)
+              lang, prob, _ = model.detect_language(audio)
+              print(f"  {os.path.basename(w)}: {lang} ({prob:.2f})")
+          dt = time.time() - t0
+          print(f"\n{len(wavs)} clipes em {dt:.1f}s -> {dt/len(wavs):.2f}s/clipe")
+          PYEOF
