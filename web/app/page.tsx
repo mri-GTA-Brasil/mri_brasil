@@ -134,6 +134,25 @@ export default function Home() {
         </>
       )}
 
+      {/* Ambientação visual */}
+      <Link
+        href="/ambiente"
+        className="mt-12 block rounded-3xl border border-border bg-card/60 p-6 sm:p-8 backdrop-blur transition-colors hover:border-brand-green/40"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-xl font-semibold">
+              🏙️ Ambientação São Paulo
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Viaturas, props e cenário em tema brasileiro — explore os modelos
+              3D interativos com as texturas BR.
+            </p>
+          </div>
+          <span className="shrink-0 text-2xl text-brand-green">→</span>
+        </div>
+      </Link>
+
       {/* Créditos aos criadores originais */}
       <section className="mt-12 rounded-3xl border border-border bg-card/60 p-6 sm:p-8 backdrop-blur">
         <h2 className="text-xl font-semibold">🙏 Créditos</h2>
