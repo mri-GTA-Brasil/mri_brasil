@@ -145,8 +145,8 @@ export default function Home() {
               🏙️ Ambientação São Paulo
             </h2>
             <p className="mt-2 text-sm text-muted">
-              Viaturas, props e cenário em tema brasileiro — explore os modelos
-              3D interativos com as texturas BR.
+              Props, personagens, viaturas e retexturas em tema brasileiro —
+              veja os pacotes disponíveis.
             </p>
           </div>
           <span className="shrink-0 text-2xl text-brand-green">→</span>

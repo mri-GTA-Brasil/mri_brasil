@@ -1,26 +1,59 @@
-import fs from "fs";
-import path from "path";
 import Link from "next/link";
-import AmbienteGallery from "@/components/AmbienteGallery";
-import { groupModels, BASE_PATH, type Model3D } from "@/lib/models3d";
 
-function readModels(): Model3D[] {
-  try {
-    const p = path.join(process.cwd(), "public", "models3d", "manifest.json");
-    return JSON.parse(fs.readFileSync(p, "utf-8")) as Model3D[];
-  } catch {
-    return [];
-  }
+interface Pack {
+  id: string;
+  icon: string;
+  name: string;
+  desc: string;
+  size: string;
 }
 
-export default function AmbientePage() {
-  const groups = groupModels(readModels());
-  const total = groups.reduce((n, g) => n + g.models.length, 0);
-  const textured = groups.reduce(
-    (n, g) => n + g.models.filter((m) => m.images > 0).length,
-    0
-  );
+const PACKS: Pack[] = [
+  {
+    id: "mri_brasil_props",
+    icon: "🏙️",
+    name: "Props & cenário",
+    desc: "Placas de rua, mobiliário urbano, bandeiras, semáforos, pedágios e mais.",
+    size: "~148 MB",
+  },
+  {
+    id: "mri_brasil_peds_policia",
+    icon: "👮",
+    name: "Personagens (polícia & forças)",
+    desc: "Skins de PM, polícia civil/federal, COE, ROCAM, exército, SAMU, PROTEGE e gangues.",
+    size: "~164 MB",
+  },
+  {
+    id: "mri_brasil_viaturas",
+    icon: "🚓",
+    name: "Viaturas",
+    desc: "Liveries de viaturas de polícia e federal em tema brasileiro.",
+    size: "~59 MB",
+  },
+  {
+    id: "mri_brasil_correios",
+    icon: "📦",
+    name: "Correios",
+    desc: "Skins de carteiro e van de entrega.",
+    size: "~10 MB",
+  },
+  {
+    id: "mri_brasil_mapa_aeroporto",
+    icon: "✈️",
+    name: "Aeroporto",
+    desc: "Retextura da área do aeroporto em tema BR.",
+    size: "~158 MB",
+  },
+  {
+    id: "mri_brasil_mapa_zancudo",
+    icon: "🪖",
+    name: "Fort Zancudo",
+    desc: "Retextura da base militar.",
+    size: "~61 MB",
+  },
+];
 
+export default function AmbientePage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-20">
       <header className="text-center">
@@ -28,11 +61,11 @@ export default function AmbientePage() {
           🏙️ Ambientação São Paulo
         </span>
         <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
-          Modelos 3D em tema BR
+          Pacotes de ambientação visual
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted">
-          Viaturas, props e cenário do pacote de ambientação — convertidos do
-          jogo e exibidos em 3D interativo, com as texturas brasileiras.
+          Props, personagens, viaturas e retexturas que deixam o mundo com a cara
+          do Brasil. Instale só os pacotes que quiser no seu servidor.
         </p>
         <Link
           href="/"
@@ -42,23 +75,39 @@ export default function AmbientePage() {
         </Link>
       </header>
 
-      {groups.length === 0 ? (
-        <div className="mt-16 rounded-3xl border border-border bg-card/60 p-10 text-center text-muted">
-          Nenhum modelo 3D disponível ainda.
-        </div>
-      ) : (
-        <>
-          <p className="mt-8 text-center text-sm text-muted">
-            {total} modelos · {textured} com textura BR · arraste para girar,
-            scroll para zoom
-          </p>
-          <AmbienteGallery groups={groups} basePath={BASE_PATH} />
-        </>
-      )}
+      <section className="mt-12 grid gap-4 sm:grid-cols-2">
+        {PACKS.map((p) => (
+          <div
+            key={p.id}
+            className="rounded-2xl border border-border bg-card/60 p-5"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{p.icon}</span>
+                <h2 className="font-semibold leading-tight">{p.name}</h2>
+              </div>
+              <span className="shrink-0 rounded-full bg-background/40 px-2 py-0.5 text-xs text-muted tabular-nums">
+                {p.size}
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-muted">{p.desc}</p>
+            <code className="mt-3 block truncate text-xs text-brand-green/80">
+              ensure {p.id}
+            </code>
+          </div>
+        ))}
+      </section>
 
-      <section className="mt-12 rounded-3xl border border-border bg-card/60 p-6 text-sm text-muted">
+      <section className="mt-10 rounded-3xl border border-border bg-card/60 p-6 text-sm text-muted">
         <p>
-          🙏 Os assets de ambientação (modelos e texturas) têm como fonte o{" "}
+          📦 Cada pacote é um resource independente em{" "}
+          <code className="rounded bg-card px-1 text-xs">resource/[mri_brasil]/</code>
+          . Copie a pasta para o seu servidor e dê{" "}
+          <code className="rounded bg-card px-1 text-xs">ensure</code> só nos que
+          quiser.
+        </p>
+        <p className="mt-3">
+          🙏 Os assets de ambientação têm como fonte o{" "}
           <a
             href="https://www.gta5-mods.com/"
             target="_blank"
@@ -67,9 +116,7 @@ export default function AmbientePage() {
           >
             GTA5-Mods
           </a>{" "}
-          e seus autores. Os modelos foram convertidos para visualização no
-          navegador (geometria + textura). Skins de personagens e retexturas de
-          mapa (aeroporto, Fort Zancudo) entram como galeria de imagens em breve.
+          e seus autores.
         </p>
       </section>
 
