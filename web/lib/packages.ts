@@ -12,7 +12,14 @@ export function fmtSize(bytes: number): string {
   return `${Math.round(bytes / 1e6)} MB`;
 }
 
-export const CATEGORY_LABEL: Record<Pkg["category"], { label: string; icon: string }> = {
-  dublagem: { label: "Dublagem", icon: "🎙️" },
-  ambientacao: { label: "Ambientação visual", icon: "🏙️" },
+export const CATEGORY_LABEL: Record<
+  Pkg["category"],
+  { label: string; icon: string; note?: string }
+> = {
+  dublagem: { label: "Dublagem", icon: "🎙️", note: "Vozes em português (PT-BR)" },
+  ambientacao: {
+    label: "Ambientação — São Paulo",
+    icon: "🏙️",
+    note: "Visual paulista: PM-SP, viaturas, bandeiras e torcidas",
+  },
 };

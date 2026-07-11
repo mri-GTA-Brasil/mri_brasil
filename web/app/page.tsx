@@ -101,9 +101,11 @@ export default function Home() {
               </p>
             )}
           </div>
-          <p className="mt-4 max-w-xl text-muted">
-            Cada pacote é independente — instale só o que fizer sentido pro seu
-            servidor. Marque os que quiser; a gente monta o{" "}
+          <p className="mt-4 max-w-2xl text-muted">
+            Vozes em português + ambientação com a cara de{" "}
+            <span className="text-foreground">São Paulo</span> — PM-SP, viaturas,
+            bandeiras paulistas e dos times, torcidas. Cada pacote é independente;
+            marque os que quiser que a gente monta o{" "}
             <code className="rounded bg-surface px-1 font-mono text-sm">server.cfg</code> pra você.
           </p>
 

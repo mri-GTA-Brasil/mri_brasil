@@ -66,12 +66,17 @@ export default function BundleBuilder({ packages }: { packages: Pkg[] }) {
       {/* Grupos */}
       {(["dublagem", "ambientacao"] as const).map((cat) => (
         <section key={cat} className="mt-8">
-          <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wider text-muted">
-            <span>{CATEGORY_LABEL[cat].icon}</span> {CATEGORY_LABEL[cat].label}
-            <span className="font-mono text-xs normal-case">
-              ({groups[cat].length})
-            </span>
-          </h3>
+          <div className="mb-3">
+            <h3 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wider text-muted">
+              <span>{CATEGORY_LABEL[cat].icon}</span> {CATEGORY_LABEL[cat].label}
+              <span className="font-mono text-xs normal-case">
+                ({groups[cat].length})
+              </span>
+            </h3>
+            {CATEGORY_LABEL[cat].note && (
+              <p className="mt-1 text-xs text-muted">{CATEGORY_LABEL[cat].note}</p>
+            )}
+          </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {groups[cat].map((p) => {
               const on = sel.has(p.id);

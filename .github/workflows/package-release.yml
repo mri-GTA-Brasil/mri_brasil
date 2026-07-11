@@ -64,11 +64,11 @@ jobs:
             "mri_brasil_oneshot_ambience": ("dublagem", "Ambiente pontual", "Anúncios de aeroporto, veículos distantes, efeitos pontuais."),
             "mri_brasil_streamed_ambience_p1": ("dublagem", "Ambiente streaming (1/2)", "Sons de ambiente contínuos — parte 1."),
             "mri_brasil_streamed_ambience_p2": ("dublagem", "Ambiente streaming (2/2)", "Sons de ambiente contínuos — parte 2."),
-            "mri_brasil_props": ("ambientacao", "Props & cenário", "Placas de rua, mobiliário urbano, bandeiras, semáforos, pedágios."),
-            "mri_brasil_peds_policia": ("ambientacao", "Polícia & forças", "Skins de PM, PC, PF, COE, ROCAM, exército, SAMU e gangues."),
-            "mri_brasil_viaturas": ("ambientacao", "Viaturas", "Liveries de viaturas de polícia e federal."),
-            "mri_brasil_correios": ("ambientacao", "Correios", "Skins de carteiro e van de entrega."),
-            "mri_brasil_mapa_aeroporto": ("ambientacao", "Aeroporto", "Retextura da área do aeroporto em tema BR."),
+            "mri_brasil_props": ("ambientacao", "Props & cenário", "Placas de rua, mobiliário urbano, bandeiras de SP e dos times, semáforos, pedágios."),
+            "mri_brasil_peds_policia": ("ambientacao", "Polícia, forças & torcidas", "Skins da PM-SP, PC, PF, ROCAM, COE, exército, SAMU — e torcedores paulistas (Corinthians, Palmeiras…)."),
+            "mri_brasil_viaturas": ("ambientacao", "Viaturas", "Liveries de viaturas da PM-SP e polícia federal."),
+            "mri_brasil_correios": ("ambientacao", "Correios", "Skins de carteiro e van dos Correios."),
+            "mri_brasil_mapa_aeroporto": ("ambientacao", "Aeroporto", "Retextura da área do aeroporto no clima brasileiro."),
             "mri_brasil_mapa_zancudo": ("ambientacao", "Fort Zancudo", "Retextura da base militar."),
           }
 
