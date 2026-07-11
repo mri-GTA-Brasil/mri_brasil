@@ -14,6 +14,7 @@ const CREATORS = [
 ];
 
 const nf = (n: number) => n.toLocaleString("pt-BR");
+const BASE_PATH = process.env.NODE_ENV === "production" ? "/mri_brasil" : "";
 
 function readPackages(): Pkg[] {
   try {
@@ -42,8 +43,15 @@ export default function Home() {
       {/* Cabeçalho */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
-          <a href="#top" className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-brand-green shadow-[0_0_10px_var(--brand-green)]" />
+          <a href="#top" className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${BASE_PATH}/mriqbox-logo.png`}
+              alt="mri Qbox Brasil"
+              width={26}
+              height={26}
+              className="rounded-md"
+            />
             <span className="font-mono text-sm font-medium tracking-tight">
               mri <span className="text-muted">/ GTA Brasil</span>
             </span>
