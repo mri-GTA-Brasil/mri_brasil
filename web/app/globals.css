@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0e14;
-  --foreground: #e8edf2;
-  --muted: #8b97a7;
-  --card: #121823;
-  --border: #1f2937;
-  --brand-green: #009b3a;
-  --brand-yellow: #ffdf00;
-  --brand-blue: #002776;
+  /* Asfalto noturno, quente — não o navy frio de dashboard */
+  --background: #0a0a0b;
+  --surface: #131312;
+  --foreground: #ecebe4;
+  --muted: #8b8a80;
+  --border: #262521;
+  /* Verde-sinal: "voz / dublado". Âmbar: estado "falta" (inglês). */
+  --brand-green: #3ed47f;
+  --brand-yellow: #e3a73a;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
-  --color-card: var(--card);
+  --color-card: var(--surface);
   --color-border: var(--border);
   --color-brand-green: var(--brand-green);
   --color-brand-yellow: var(--brand-yellow);
-  --color-brand-blue: var(--brand-blue);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-display: var(--font-archivo);
 }
 
 html {
@@ -32,8 +34,64 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
-  background-image:
-    radial-gradient(900px circle at 12% -10%, rgba(0, 155, 58, 0.14), transparent 55%),
-    radial-gradient(800px circle at 92% 8%, rgba(255, 223, 0, 0.08), transparent 50%);
-  background-attachment: fixed;
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Grão de filme + vinheta sutil — tira o "chapado digital" de IA */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(120% 80% at 50% -10%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* Foco de teclado visível (acessibilidade) */
+:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--brand-green) 28%, transparent);
+  color: #fff;
+}
+
+/* Tipografia utilitária */
+.font-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+.eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tnum {
+  font-family: var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
