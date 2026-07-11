@@ -59,7 +59,7 @@ export default function Home() {
           <nav className="flex items-center gap-5 text-sm text-muted sm:gap-6">
             <a href="#baixar" className="transition-colors hover:text-foreground">Baixar</a>
             <a href="#progresso" className="hidden transition-colors hover:text-foreground sm:inline">Progresso</a>
-            <a href="https://github.com/mri-GTA-Brasil/mri_brasil" className="hidden transition-colors hover:text-foreground sm:inline">GitHub ↗</a>
+            <a href="https://github.com/mri-Qbox-Brasil" target="_blank" rel="noopener noreferrer" className="hidden transition-colors hover:text-foreground sm:inline">GitHub ↗</a>
             <a href="https://discord.mriqbox.com.br" target="_blank" rel="noopener noreferrer" className="rounded-full bg-brand-green px-3.5 py-1.5 font-medium text-background transition-opacity hover:opacity-90">Discord</a>
           </nav>
         </div>
@@ -68,7 +68,15 @@ export default function Home() {
       <main id="top" className="mx-auto w-full max-w-5xl px-5">
         {/* Hero */}
         <section className="pt-16 sm:pt-24">
-          <p className="eyebrow">FiveM · Dublagem PT-BR</p>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${BASE_PATH}/flag-br.svg`} alt="Bandeira do Brasil" className="h-3.5 w-auto rounded-[2px] ring-1 ring-border" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${BASE_PATH}/flag-sp.svg`} alt="Bandeira de São Paulo" className="h-3.5 w-auto rounded-[2px] ring-1 ring-border" />
+            </span>
+            <p className="eyebrow">FiveM · Dublagem PT-BR</p>
+          </div>
           <h1 className="mt-5 max-w-3xl font-display text-5xl font-black leading-[0.95] tracking-tight sm:text-7xl">
             Los Santos agora
             <br />
