@@ -1,0 +1,101 @@
+# Zipa cada pacote instalável e publica como asset numa Release (download direto).
+# Gera web/public/packages.json (tamanho + URL de cada zip) para o site.
+name: Empacotar pacotes (Release)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TAG: packages
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Zipar cada pacote
+        run: |
+          mkdir -p /tmp/zips
+          cd "resource/[mri_brasil]"
+          for d in mri_brasil_*/ ; do
+            name="${d%/}"
+            zip -r -q "/tmp/zips/${name}.zip" "$name"
+            echo "✓ ${name}.zip  $(du -h /tmp/zips/${name}.zip | cut -f1)"
+          done
+          ls -la /tmp/zips
+
+      - name: Publicar/atualizar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "Pacotes mri Brasil (instaláveis)" \
+              --notes "Zips prontos de cada pacote. Baixe pelo site: https://mri-gta-brasil.github.io/mri_brasil/" \
+              --target "$GITHUB_SHA"
+          fi
+          gh release upload "$TAG" /tmp/zips/*.zip --clobber
+
+      - name: Gerar packages.json
+        run: |
+          python3 - << 'PYEOF'
+          import os, json
+
+          REPO = "mri-GTA-Brasil/mri_brasil"
+          TAG = os.environ["TAG"]
+          ZIPS = "/tmp/zips"
+
+          # id -> (categoria, nome, descrição)
+          META = {
+            "mri_brasil_s_full_amb_m": ("dublagem", "NPCs ambientes — masculino", "Falas de pedestres e personagens masculinos do mundo aberto."),
+            "mri_brasil_s_full_amb_f": ("dublagem", "NPCs ambientes — feminino", "Falas de pedestres e personagens femininos do mundo aberto."),
+            "mri_brasil_s_full_ser": ("dublagem", "NPCs de serviço", "Polícia, bombeiros, SWAT, pilotos, seguranças e afins."),
+            "mri_brasil_s_full_gan": ("dublagem", "Gangues", "Ballas, Families, Lost MC e demais facções."),
+            "mri_brasil_police_scanner_p1": ("dublagem", "Scanner da polícia (1/3)", "Rádio e despacho policial — parte 1."),
+            "mri_brasil_police_scanner_p2": ("dublagem", "Scanner da polícia (2/3)", "Rádio e despacho policial — parte 2."),
+            "mri_brasil_police_scanner_p3": ("dublagem", "Scanner da polícia (3/3)", "Rádio e despacho policial — parte 3."),
+            "mri_brasil_oneshot_ambience": ("dublagem", "Ambiente pontual", "Anúncios de aeroporto, veículos distantes, efeitos pontuais."),
+            "mri_brasil_streamed_ambience_p1": ("dublagem", "Ambiente streaming (1/2)", "Sons de ambiente contínuos — parte 1."),
+            "mri_brasil_streamed_ambience_p2": ("dublagem", "Ambiente streaming (2/2)", "Sons de ambiente contínuos — parte 2."),
+            "mri_brasil_props": ("ambientacao", "Props & cenário", "Placas de rua, mobiliário urbano, bandeiras, semáforos, pedágios."),
+            "mri_brasil_peds_policia": ("ambientacao", "Polícia & forças", "Skins de PM, PC, PF, COE, ROCAM, exército, SAMU e gangues."),
+            "mri_brasil_viaturas": ("ambientacao", "Viaturas", "Liveries de viaturas de polícia e federal."),
+            "mri_brasil_correios": ("ambientacao", "Correios", "Skins de carteiro e van de entrega."),
+            "mri_brasil_mapa_aeroporto": ("ambientacao", "Aeroporto", "Retextura da área do aeroporto em tema BR."),
+            "mri_brasil_mapa_zancudo": ("ambientacao", "Fort Zancudo", "Retextura da base militar."),
+          }
+
+          pkgs = []
+          for fn in sorted(os.listdir(ZIPS)):
+              if not fn.endswith(".zip"):
+                  continue
+              pid = fn[:-4]
+              cat, name, desc = META.get(pid, ("ambientacao", pid, ""))
+              size = os.path.getsize(os.path.join(ZIPS, fn))
+              pkgs.append({
+                  "id": pid, "category": cat, "name": name, "desc": desc,
+                  "size": size,
+                  "url": f"https://github.com/{REPO}/releases/download/{TAG}/{fn}",
+              })
+
+          out = "web/public/packages.json"
+          os.makedirs(os.path.dirname(out), exist_ok=True)
+          with open(out, "w", encoding="utf-8") as f:
+              json.dump(pkgs, f, ensure_ascii=False, separators=(",", ":"))
+          print(f"packages.json: {len(pkgs)} pacotes, total {sum(p['size'] for p in pkgs)/1e9:.2f} GB")
+          PYEOF
+
+      - name: Commit packages.json
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: packages.json (zips da release)"
+          file_pattern: "web/public/packages.json"
+          commit_user_name: mur4i
+          commit_user_email: "89431075+mur4i@users.noreply.github.com"
