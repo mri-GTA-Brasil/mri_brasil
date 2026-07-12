@@ -29,6 +29,14 @@ jobs:
             zip -r -q "/tmp/zips/${name}.zip" "$name"
             echo "✓ ${name}.zip  $(du -h /tmp/zips/${name}.zip | cut -f1)"
           done
+
+          # Pacotões combinados (baixar tudo de uma vez, 1 arquivo)
+          DUB="mri_brasil_s_full_amb_m mri_brasil_s_full_amb_f mri_brasil_s_full_ser mri_brasil_s_full_gan mri_brasil_police_scanner_p1 mri_brasil_police_scanner_p2 mri_brasil_police_scanner_p3 mri_brasil_oneshot_ambience mri_brasil_streamed_ambience_p1 mri_brasil_streamed_ambience_p2"
+          AMB="mri_brasil_props mri_brasil_peds_policia mri_brasil_viaturas mri_brasil_correios mri_brasil_mapa_aeroporto mri_brasil_mapa_zancudo"
+          zip -r -q /tmp/zips/mri_brasil_completo.zip mri_brasil_*
+          zip -r -q /tmp/zips/mri_brasil_dublagem.zip $DUB
+          zip -r -q /tmp/zips/mri_brasil_ambientacao.zip $AMB
+          echo "combinados:"; du -h /tmp/zips/mri_brasil_completo.zip /tmp/zips/mri_brasil_dublagem.zip /tmp/zips/mri_brasil_ambientacao.zip
           ls -la /tmp/zips
 
       - name: Publicar/atualizar release
@@ -72,30 +80,50 @@ jobs:
             "mri_brasil_mapa_zancudo": ("ambientacao", "Fort Zancudo", "Retextura da base militar."),
           }
 
-          pkgs = []
-          for fn in sorted(os.listdir(ZIPS)):
-              if not fn.endswith(".zip"):
-                  continue
-              pid = fn[:-4]
-              cat, name, desc = META.get(pid, ("ambientacao", pid, ""))
-              size = os.path.getsize(os.path.join(ZIPS, fn))
-              pkgs.append({
-                  "id": pid, "category": cat, "name": name, "desc": desc,
-                  "size": size,
-                  "url": f"https://github.com/{REPO}/releases/download/{TAG}/{fn}",
-              })
+          def url(fn):
+              return f"https://github.com/{REPO}/releases/download/{TAG}/{fn}"
+          def size(fn):
+              p = os.path.join(ZIPS, fn)
+              return os.path.getsize(p) if os.path.exists(p) else 0
 
-          out = "web/public/packages.json"
-          os.makedirs(os.path.dirname(out), exist_ok=True)
-          with open(out, "w", encoding="utf-8") as f:
+          # packages.json — só os 16 pacotes reais (na ordem do META)
+          pkgs = []
+          for pid, (cat, name, desc) in META.items():
+              fn = f"{pid}.zip"
+              if not os.path.exists(os.path.join(ZIPS, fn)):
+                  continue
+              pkgs.append({"id": pid, "category": cat, "name": name, "desc": desc,
+                           "size": size(fn), "url": url(fn)})
+
+          os.makedirs("web/public", exist_ok=True)
+          with open("web/public/packages.json", "w", encoding="utf-8") as f:
               json.dump(pkgs, f, ensure_ascii=False, separators=(",", ":"))
-          print(f"packages.json: {len(pkgs)} pacotes, total {sum(p['size'] for p in pkgs)/1e9:.2f} GB")
+
+          # bundles.json — pacotões combinados (baixar tudo de uma vez)
+          dub = [p for p, m in META.items() if m[0] == "dublagem"]
+          amb = [p for p, m in META.items() if m[0] == "ambientacao"]
+          BUNDLES = [
+              ("mri_brasil_completo", "Tudo", [p for p in META], "todos os pacotes num único arquivo"),
+              ("mri_brasil_dublagem", "Só dublagem", dub, "todos os pacotes de voz"),
+              ("mri_brasil_ambientacao", "Só ambientação", amb, "props, personagens, viaturas e mapas"),
+          ]
+          bundles = []
+          for bid, label, ids, desc in BUNDLES:
+              fn = f"{bid}.zip"
+              if not os.path.exists(os.path.join(ZIPS, fn)):
+                  continue
+              bundles.append({"id": bid, "label": label, "desc": desc,
+                              "size": size(fn), "url": url(fn), "packages": ids})
+          with open("web/public/bundles.json", "w", encoding="utf-8") as f:
+              json.dump(bundles, f, ensure_ascii=False, separators=(",", ":"))
+
+          print(f"packages.json: {len(pkgs)} · bundles.json: {len(bundles)}")
           PYEOF
 
       - name: Commit packages.json
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: packages.json (zips da release)"
-          file_pattern: "web/public/packages.json"
+          commit_message: "chore: packages.json + bundles.json (zips da release)"
+          file_pattern: "web/public/packages.json web/public/bundles.json"
           commit_user_name: mur4i
           commit_user_email: "89431075+mur4i@users.noreply.github.com"
