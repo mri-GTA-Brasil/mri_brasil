@@ -4,7 +4,7 @@ import Link from "next/link";
 import Waveform from "@/components/Waveform";
 import BundleBuilder from "@/components/BundleBuilder";
 import { getCategoriesWithSummary, getDubStats } from "@/lib/clips";
-import { fmtSize, type Pkg } from "@/lib/packages";
+import { fmtSize, type Pkg, type Bundle } from "@/lib/packages";
 
 const CREATORS = [
   { handle: "@matiasproducoes", url: "https://www.youtube.com/@matiasproducoes" },
@@ -16,10 +16,10 @@ const CREATORS = [
 const nf = (n: number) => n.toLocaleString("pt-BR");
 const BASE_PATH = process.env.NODE_ENV === "production" ? "/mri_brasil" : "";
 
-function readPackages(): Pkg[] {
+function readJson<T>(file: string): T[] {
   try {
-    const p = path.join(process.cwd(), "public", "packages.json");
-    return JSON.parse(fs.readFileSync(p, "utf-8")) as Pkg[];
+    const p = path.join(process.cwd(), "public", file);
+    return JSON.parse(fs.readFileSync(p, "utf-8")) as T[];
   } catch {
     return [];
   }
@@ -27,7 +27,8 @@ function readPackages(): Pkg[] {
 
 export default function Home() {
   const stats = getDubStats();
-  const packages = readPackages();
+  const packages = readJson<Pkg>("packages.json");
+  const bundles = readJson<Bundle>("bundles.json");
   const totalBytes = packages.reduce((n, p) => n + p.size, 0);
   const cats = getCategoriesWithSummary()
     .map((c) => {
@@ -127,7 +128,7 @@ export default function Home() {
 
           <div className="mt-10">
             {packages.length > 0 ? (
-              <BundleBuilder packages={packages} />
+              <BundleBuilder packages={packages} bundles={bundles} />
             ) : (
               <div className="rounded-2xl border border-border bg-surface/40 p-10 text-center text-muted">
                 Os pacotes estão sendo empacotados. Volte em instantes.

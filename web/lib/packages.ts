@@ -7,6 +7,15 @@ export interface Pkg {
   url: string;
 }
 
+export interface Bundle {
+  id: string;
+  label: string;
+  desc: string;
+  size: number;
+  url: string;
+  packages: string[];
+}
+
 export function fmtSize(bytes: number): string {
   if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(2).replace(".", ",")} GB`;
   return `${Math.round(bytes / 1e6)} MB`;

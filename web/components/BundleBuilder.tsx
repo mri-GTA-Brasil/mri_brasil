@@ -1,11 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { fmtSize, CATEGORY_LABEL, type Pkg } from "@/lib/packages";
+import { fmtSize, CATEGORY_LABEL, type Pkg, type Bundle } from "@/lib/packages";
 
-export default function BundleBuilder({ packages }: { packages: Pkg[] }) {
+export default function BundleBuilder({
+  packages,
+  bundles,
+}: {
+  packages: Pkg[];
+  bundles: Bundle[];
+}) {
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState(false);
 
   const groups = useMemo(() => {
     const g: Record<string, Pkg[]> = { dublagem: [], ambientacao: [] };
@@ -28,6 +35,38 @@ export default function BundleBuilder({ packages }: { packages: Pkg[] }) {
   const cfg =
     "# mri Brasil — pacotes selecionados\n" +
     selected.map((p) => `ensure ${p.id}`).join("\n");
+
+  // Se a seleção casa exatamente com um pacotão, dá pra baixar 1 arquivo só.
+  const selIds = new Set(selected.map((p) => p.id));
+  const matchedBundle =
+    bundles.find(
+      (b) =>
+        b.packages.length === selIds.size &&
+        b.packages.every((id) => selIds.has(id))
+    ) ?? null;
+
+  const terminalCmd = matchedBundle
+    ? `curl -L -O "${matchedBundle.url}"`
+    : "curl -L " + selected.map((p) => `-O "${p.url}"`).join(" ");
+
+  function downloadSingle(u: string) {
+    const a = document.createElement("a");
+    a.href = u;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function copyCmd() {
+    try {
+      await navigator.clipboard.writeText(terminalCmd);
+      setCopiedCmd(true);
+      setTimeout(() => setCopiedCmd(false), 1800);
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function copyCfg() {
     try {
@@ -54,6 +93,40 @@ export default function BundleBuilder({ packages }: { packages: Pkg[] }) {
 
   return (
     <div>
+      {/* Baixar tudo de uma vez — 1 arquivo */}
+      {bundles.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-border bg-surface/40 p-5">
+          <p className="eyebrow">Baixar tudo de uma vez</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {bundles.map((b, i) => (
+              <a
+                key={b.id}
+                href={b.url}
+                className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
+                  i === 0
+                    ? "border-brand-green/50 bg-brand-green/[0.08] hover:bg-brand-green/[0.14]"
+                    : "border-border bg-background/40 hover:border-brand-green/40"
+                }`}
+              >
+                <span className="min-w-0">
+                  <span className="block font-medium">{b.label}</span>
+                  <span className="block truncate text-xs text-muted">
+                    {b.packages.length} pacotes
+                  </span>
+                </span>
+                <span className="tnum shrink-0 text-xs text-muted">
+                  {fmtSize(b.size)} ↓
+                </span>
+              </a>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            Um único arquivo — uma confirmação só. Ou monte um pack personalizado
+            abaixo.
+          </p>
+        </div>
+      )}
+
       {/* Atalhos */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="eyebrow mr-1">Atalhos</span>
@@ -179,25 +252,48 @@ export default function BundleBuilder({ packages }: { packages: Pkg[] }) {
       {/* Barra de ação fixa */}
       {selected.length > 0 && (
         <div className="sticky bottom-4 z-40 mt-8">
-          <div className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-brand-green/30 bg-surface/90 p-3 pl-5 shadow-xl backdrop-blur-md sm:flex-row sm:justify-between">
+          <div className="mx-auto flex flex-col gap-3 rounded-2xl border border-brand-green/30 bg-surface/90 p-3 pl-5 shadow-xl backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm">
               <span className="tnum font-semibold">{selected.length}</span>{" "}
               pacote{selected.length !== 1 ? "s" : ""} ·{" "}
               <span className="tnum text-muted">{fmtSize(totalSize)}</span>
+              {matchedBundle ? (
+                <span className="ml-2 text-xs text-brand-green">· 1 arquivo só</span>
+              ) : (
+                <span className="ml-2 text-xs text-muted">· {selected.length} arquivos</span>
+              )}
             </p>
-            <div className="flex w-full gap-2 sm:w-auto">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               <button
                 onClick={copyCfg}
                 className="flex-1 rounded-full border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:border-brand-green/50 sm:flex-none"
               >
-                {copied ? "server.cfg copiado ✓" : "Copiar server.cfg"}
+                {copied ? "server.cfg copiado ✓" : "server.cfg"}
               </button>
-              <button
-                onClick={downloadAll}
-                className="flex-1 rounded-full bg-brand-green px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 sm:flex-none"
-              >
-                Baixar {selected.length} ↓
-              </button>
+              {matchedBundle ? (
+                <a
+                  href={matchedBundle.url}
+                  className="flex-1 rounded-full bg-brand-green px-5 py-2.5 text-center text-sm font-medium text-background transition-opacity hover:opacity-90 sm:flex-none"
+                >
+                  Baixar 1 arquivo ↓
+                </a>
+              ) : (
+                <>
+                  <button
+                    onClick={copyCmd}
+                    title="Comando pra baixar tudo de uma vez no terminal do servidor"
+                    className="flex-1 rounded-full border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:border-brand-green/50 sm:flex-none"
+                  >
+                    {copiedCmd ? "comando copiado ✓" : "Comando (curl)"}
+                  </button>
+                  <button
+                    onClick={downloadAll}
+                    className="flex-1 rounded-full bg-brand-green px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 sm:flex-none"
+                  >
+                    Baixar {selected.length} ↓
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
